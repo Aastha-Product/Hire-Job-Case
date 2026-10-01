@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hiring Components Map</title>
+<style>
+  :root {
+    --bg: #eef4f0; --panel: #ffffff; --ink: #14202b; --muted: #5b6874; --head: #16263a; --head-ink: #ffffff;
+    --grid: #e3e8ee;
+    --l-founder: #eaf1fb; --l-system: #fcf8e6; --l-ai: #eaf6ee; --l-email: #fbeef2; --l-store: #f1eefb;
+    --b-purple: #6d5bd0; --b-blue: #2f6fd6; --b-green: #2e9b57; --b-amber: #d99a1e; --b-pink: #d0417f; --b-red: #d8483b; --b-violet: #7c4dcc;
+    --new: #d8483b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1512; --panel: #151c22; --ink: #e5ebf0; --muted: #98a6b3; --head: #0b1420; --head-ink: #e5ebf0; --grid: #26303a;
+      --l-founder: #16202e; --l-system: #221f12; --l-ai: #13231a; --l-email: #26161d; --l-store: #1c1829;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1512; --panel: #151c22; --ink: #e5ebf0; --muted: #98a6b3; --head: #0b1420; --head-ink: #e5ebf0; --grid: #26303a;
+    --l-founder: #16202e; --l-system: #221f12; --l-ai: #13231a; --l-email: #26161d; --l-store: #1c1829;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 13px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 24px 16px 40px; }
+  .card { background: var(--panel); border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+  h1 { text-align: center; font-size: 22px; margin: 2px 0 4px; }
+  .sub { text-align: center; color: var(--muted); margin: 0 0 16px; }
+  .scroll { overflow-x: auto; }
+  .map { display: grid; grid-template-columns: 120px repeat(6, minmax(150px, 1fr)); min-width: 1080px; border-radius: 8px; overflow: hidden; }
+  .h { background: var(--head); color: var(--head-ink); font-weight: 600; text-align: center; padding: 12px 6px; border-right: 1px solid rgba(255,255,255,.08); }
+  .actor { background: var(--head); color: var(--head-ink); padding: 12px 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; font-weight: 600; font-size: 14px; border-top: 1px solid rgba(255,255,255,.08); }
+  .actor small { font-weight: 400; opacity: .75; font-size: 11px; }
+  .cell { padding: 10px 8px; border-right: 1px solid var(--grid); border-top: 1px solid var(--grid); display: flex; flex-direction: column; gap: 8px; justify-content: center; min-height: 118px; }
+  .founder { background: var(--l-founder); } .system { background: var(--l-system); } .ai { background: var(--l-ai); }
+  .email { background: var(--l-email); } .store { background: var(--l-store); }
+  .box { position: relative; background: var(--panel); border: 2px solid; border-radius: 10px; padding: 9px 10px 9px 30px; font-size: 12px; }
+  .box b { display: block; font-size: 12.5px; margin-bottom: 2px; }
+  .box .n { position: absolute; left: 7px; top: 8px; width: 18px; height: 18px; border-radius: 50%; color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; }
+  .new { display: inline-block; margin-left: 4px; font-size: 9.5px; font-weight: 700; letter-spacing: .04em; color: var(--new); border: 1px solid var(--new); border-radius: 4px; padding: 0 4px; vertical-align: 1px; }
+  .gate { display: inline-block; margin-top: 4px; font-size: 10px; font-weight: 700; color: #fff; background: var(--b-red); border-radius: 4px; padding: 1px 6px; }
+  .c-purple { border-color: var(--b-purple); } .c-purple .n { background: var(--b-purple); }
+  .c-blue { border-color: var(--b-blue); } .c-blue .n { background: var(--b-blue); }
+  .c-green { border-color: var(--b-green); } .c-green .n { background: var(--b-green); }
+  .c-amber { border-color: var(--b-amber); } .c-amber .n { background: var(--b-amber); }
+  .c-pink { border-color: var(--b-pink); } .c-pink .n { background: var(--b-pink); }
+  .c-red { border-color: var(--b-red); } .c-red .n { background: var(--b-red); }
+  .c-violet { border-color: var(--b-violet); } .c-violet .n { background: var(--b-violet); }
+  .span-store { grid-column: 2 / span 6; flex-direction: row; align-items: center; }
+  .span-store .box { flex: 1; }
+  .flow { margin: 14px 0 0; color: var(--muted); font-size: 12.5px; text-align: center; }
+  .flow b { color: var(--ink); }
+  .notes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+  .note { background: var(--panel); border-radius: 10px; padding: 12px 14px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+  .note h3 { margin: 0 0 6px; font-size: 13px; }
+  .note ul { margin: 0; padding-left: 18px; }
+  .note li { margin: 3px 0; }
+  table.bands { width: 100%; border-collapse: collapse; font-size: 12px; }
+  table.bands th, table.bands td { border-bottom: 1px solid var(--grid); padding: 4px 6px; text-align: left; }
+  @media (max-width: 900px) { .notes { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>Case 2 · Hiring Dashboard: Final Components Map</h1>
+    <p class="sub">Kargo · PM &amp; SPM · The system ranks, explains and drafts. Arjun decides and clicks Send. <span class="new">NEW</span> marks changes from the pre-read map.</p>
+    <div class="scroll">
+      <div class="map">
+        <div class="h">Actor</div><div class="h">Trigger</div><div class="h">Input</div><div class="h">Context</div><div class="h">Processing</div><div class="h">AI</div><div class="h">Output</div>
+
+        <!-- Founder -->
+        <div class="actor">Founder<small>(Arjun)</small></div>
+        <div class="cell founder"><div class="box c-purple"><span class="n">1</span><b>Uploads CVs + selects applied role</b>PM / SPM, one or many at once</div></div>
+        <div class="cell founder"><div class="box c-blue"><span class="n">2</span><b>CV file + role + name</b>PDF / DOCX / TXT. Name typed or prefilled from the filename <span class="new">NEW</span></div></div>
+        <div class="cell founder"></div>
+        <div class="cell founder"></div>
+        <div class="cell founder"></div>
+        <div class="cell founder"><div class="box c-red"><span class="n">8</span><b>Hiring dashboard</b>Shortlist → Borderline → Below, per-criterion evidence, brief, editable draft. Invite / Reject override, then <b style="display:inline">Send</b><br><span class="gate">HUMAN GATE</span> <span class="new">NEW</span></div></div>
+
+        <!-- System -->
+        <div class="actor">System<small>(App backend)</small></div>
+        <div class="cell system"></div>
+        <div class="cell system"></div>
+        <div class="cell system">
+          <div class="box c-green"><span class="n">3</span><b>PII split in code, not AI</b> <span class="new">NEW</span>Regex email/phone + name redaction → private <i>personal_details</i> + redacted <i>cv_content</i></div>
+          <div class="box c-violet"><span class="n">4</span><b>Rubric as context</b> <span class="new">NEW</span>rubric.txt from Cowork research on the 8 hires: 5 criteria, 0/1/2, bands</div>
+        </div>
+        <div class="cell system"><div class="box c-amber"><span class="n">6</span><b>Deterministic scoring</b> <span class="new">NEW</span>Evidence-or-zero → Fit Index → bands → routing (SPM › PM › applied) → flags → rank</div></div>
+        <div class="cell system"></div>
+        <div class="cell system"></div>
+
+        <!-- AI -->
+        <div class="actor">AI Models<small>(Gemini Flash)</small></div>
+        <div class="cell ai"></div>
+        <div class="cell ai"></div>
+        <div class="cell ai"></div>
+        <div class="cell ai"><div class="box c-pink"><span class="n">5</span><b>Scores both rubrics</b>0/1/2 per criterion with a quoted bullet, reason, missing info, confidence, claims to verify. Sees redacted text only</div></div>
+        <div class="cell ai"><div class="box c-pink"><span class="n">7</span><b>Brief + drafts by band</b>Shortlist: 3-sentence brief + invite · Borderline: brief only · Below: warm rejection. <i>[NAME]</i> placeholder</div></div>
+        <div class="cell ai"></div>
+
+        <!-- Email -->
+        <div class="actor">Email Service<small>(Resend)</small></div>
+        <div class="cell email"></div>
+        <div class="cell email"></div>
+        <div class="cell email"></div>
+        <div class="cell email"></div>
+        <div class="cell email"></div>
+        <div class="cell email"><div class="box c-blue"><span class="n">9</span><b>Sends on Arjun’s click only</b>Real name inserted at send, test-domain allow-list, sent status written back <span class="new">NEW</span></div></div>
+
+        <!-- Storage -->
+        <div class="actor">Database<small>(Neon Postgres)</small> <span class="new" style="color:#ffb4ab;border-color:#ffb4ab">NEW</span></div>
+        <div class="cell store span-store">
+          <div class="box c-violet" style="padding-left:10px"><b>candidates</b>personal_details (private) · cv_content (redacted) · score_json · band · routed_role · brief · draft · sent_at</div>
+          <div class="box c-violet" style="padding-left:10px"><b>rubric_config + rubric_criteria</b>raw rubric.txt (source of truth) · 10 criterion rows · parsed bands</div>
+          <div class="box c-violet" style="padding-left:10px"><b>Locked down</b>Own kargo_hiring schema, server-only connection, single-user app (no sign-in)</div>
+        </div>
+      </div>
+    </div>
+    <p class="flow"><b>1</b> upload → <b>2</b> input → <b>3</b> PII split → <b>4</b> rubric → <b>5</b> AI scores → <b>6</b> code bands &amp; routes → <b>7</b> AI drafts → <b>8</b> Arjun reviews &amp; decides → <b>9</b> Resend sends</p>
+  </div>
+
+  <div class="notes">
+    <div class="note">
+      <h3>Decision bands (from rubric.txt)</h3>
+      <table class="bands">
+        <tr><th></th><th>PM</th><th>SPM</th></tr>
+        <tr><td>Shortlist → invite</td><td>≥ 70, C1 ≥ 1, ≤ 1 zero</td><td>≥ 75, C1 ≥ 1, C4 ≥ 1</td></tr>
+        <tr><td>Borderline → Arjun</td><td>55–69 / gate unmet</td><td>60–74 / gate unmet</td></tr>
+        <tr><td>Below → rejection</td><td>&lt; 55</td><td>&lt; 60</td></tr>
+      </table>
+    </div>
+    <div class="note">
+      <h3>What changed from the pre-read map</h3>
+      <ul>
+        <li>PII is split by code before any AI call; the name comes from the form</li>
+        <li>Scoring is split: AI judges the evidence, code does the maths, bands and routing</li>
+        <li>Borderline is a new human step: brief only, Arjun picks Invite or Reject</li>
+        <li>Neon database shown as its own lane; Resend sends only after the human gate</li>
+      </ul>
+    </div>
+    <div class="note">
+      <h3>The Cut, built in</h3>
+      <ul>
+        <li>No auto-reject, no bulk send (Checks 06 + 09)</li>
+        <li>Every email needs a confirm click; a sent email cannot be re-sent</li>
+        <li>Evidence-or-zero and quote checks stop keyword stuffing</li>
+        <li>Every quantified claim is flagged “verify in interview”</li>
+      </ul>
+    </div>
+  </div>
+</div>
+</body>
+</html>

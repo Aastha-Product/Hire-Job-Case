@@ -1,0 +1,80 @@
+KARGO HIRING RUBRIC v1.0
+Scored: every candidate against BOTH PM and SPM. Each criterion 0 (Weak) / 1 (Moderate) / 2 (Strong).
+Points = (score / 2) x weight%. Sum of 5 criteria = Fit Index (0-100).
+Evidence rule: no score above 0 without a quoted experience bullet (a real role + action). Keywords in a skills list or summary do NOT count.
+Ignore false signals: degree/college prestige, employer prestige, years of experience, tool-list length, generic "results-driven/strong leadership" language.
+Every quantified metric is to-verify in interview, not a fact. The system ranks and drafts emails; it never auto-rejects. Arjun confirms every send.
+
+============================================================
+PRODUCT MANAGER (weights sum to 100%)
+============================================================
+
+C1. FREIGHT / LOGISTICS OPERATIONAL GROUNDING  -  35%
+  Strong (2): Hands-on freight forwarding / customs / port-terminal / 3PL / carrier-ops role (~1 year+) before or alongside product; references concrete workflows (Bill of Lading, ICEGATE/EDI filing, berth windows, dwell/detention, carrier allocation).
+  Moderate (1): Adjacent operations (supply-chain analyst, warehousing, last-mile) OR embedded stints with logistics customers OR logistics reached through integrations with real depth.
+  Weak (0): Logistics appears only as the employer's market or a one-line integration; or no logistics contact (e.g., HR-tech / fintech / generic e-commerce PM).
+  Recognise under any phrasing: freight forwarder, CHA, customs broker, NVOCC, 3PL, shipping line, terminal, port, JNPT, ICD, CFS, bonded warehouse, supply chain, carrier ops, last-mile, cold chain, EXIM, import/export, Bill of Lading/BL/HBL/MBL, Shipping Bill, Certificate of Origin, Letter of Credit, DGFT, ICEGATE, EDI, delivery order, berth, vessel scheduling, detention, demurrage, dwell time, manifest, HS code, CargoWise, SAP TM, TMS, WMS, FMS, shipment visibility.
+  Guardrail: an employer being "logistics SaaS" is not itself evidence; require role-level operational contact.
+
+C2. SHIP-AND-KILL WITH A LEARNING LOOP  -  25%
+  Strong (2): Evidence of BOTH shipping features AND killing/cutting some on usage data, with the reason stated; runs post-mortems.
+  Moderate (1): Ships and iterates but shows no killing or negative-result learning.
+  Weak (0): A feature/output list with no outcomes or learning.
+  Recognise: shipped, launched, released, delivered, rolled out, GA, 0-to-1, MVP, killed, sunset, deprecated, deprioritised, cut, pulled, rolled back, discontinued, post-mortem, retrospective, A/B test, adoption data showed, validated/invalidated hypothesis, pivoted (with data).
+  Guardrail: Agile/Scrum/JIRA/roadmap in a skills list are not evidence.
+
+C3. END-TO-END OWNERSHIP UNDER PRESSURE  -  20%
+  Strong (2): A concrete crisis or ambiguous problem owned personally to closure, including the unglamorous follow-through.
+  Moderate (1): Owned a normal project end-to-end (spec to post-launch).
+  Weak (0): Contributed within a structured team only.
+  Recognise: owned end-to-end, sole owner, full ownership, on-call, incident, outage, P1, escalation, root cause, drove to resolution, to closure, action items, before the client became aware, no escalation, closed without penalty, under time pressure, cutover, migration with no data loss.
+  Guardrail: "responsible for X" is weaker than "did X and here is what happened."
+
+C4. INDEPENDENT OPERATION  -  10%
+  Strong (2): Sole/first owner of a function or area, no manager making the calls, self-scoped work.
+  Moderate (1): Real autonomy within a small team.
+  Weak (0): Operated inside a large structured org with decisions made above them.
+  Recognise: sole PM, only PM, first PM, no PM above, no manager, reports to CEO/founder, self-sourced, self-scoped, independently, without oversight, from scratch, no committee, made the call, one-person function.
+  Guardrail: independence alone is not sufficient; do not let a strong C4 rescue a weak C1.
+
+C5. GROUND-LEVEL DISCOVERY  -  10%
+  Strong (2): Embedded with users (sat in ops rooms, shadowed, ride-along, onboarded customers personally) and fed it into product.
+  Moderate (1): Regular structured discovery (interviews, calls, QBRs).
+  Weak (0): Relies on secondhand requirements.
+  Recognise: customer discovery, user interviews, embedded, sat with, shadowed, ride-along, on-site, field visit, in the ops room, spent weeks with, onboarded customers, contextual inquiry, jobs-to-be-done, user research.
+
+PM DECISION BANDS:
+  Shortlist (draft interview invite + brief): Fit Index >= 70 AND C1 >= 1 AND no more than one criterion at 0.
+  Borderline (hold for Arjun): index 55-69, OR index >= 70 with C1 = 0 (strong generalist - career-changer check).
+  Below the line (draft warm rejection, Arjun confirms): index < 55.
+
+============================================================
+SENIOR PRODUCT MANAGER (weights sum to 100%) - higher bar
+============================================================
+
+C1. FREIGHT / LOGISTICS OPERATIONAL GROUNDING  -  30%
+  Same as PM, plus: can reason about WHY systems fail operators, not just how the workflow runs.
+
+C2. SHIP-AND-KILL / PLATFORM BUILD-VS-CONFIGURE JUDGMENT  -  20%
+  Strong (2): Ship-and-kill as in PM, PLUS platform judgment - chose what to build vs configure vs stay away from, or killed own idea on data.
+  Moderate (1): Ships and iterates. Weak (0): output list only.
+
+C3. END-TO-END OWNERSHIP UNDER PRESSURE  -  20%
+  Strong (2): Owned a hard, multi-stakeholder problem (integration/reliability/data quality) to closure.
+  Moderate (1): owned a normal project end-to-end. Weak (0): contributed only.
+
+C4. INDEPENDENT OPERATION & CONSEQUENTIAL CALLS  -  25%   (the senior differentiator)
+  Strong (2): Owned a product area with NO senior PM above making the calls, and made architectural/consequential decisions and lived with them (build/configure/avoid, integration roadmap, reliability standards).
+  Moderate (1): autonomy within a small team. Weak (0): decisions made above them.
+  Recognise additionally: architecture decision, integration roadmap, data layer, data quality, reliability, SLA, platform, multi-tenant, migration, monolith to modular, scalability, carrier/port/ERP integration.
+
+C5. GROUND-LEVEL DISCOVERY  -  5%
+  Same anchors as PM.
+
+SPM DECISION BANDS:
+  Shortlist (draft interview invite + brief): Fit Index >= 75 AND C1 >= 1 AND C4 >= 1 (must show real independence).
+  Borderline (hold for Arjun): index 60-74, OR index >= 75 with C4 = 0 (not independent enough for senior).
+  Below the line (draft warm rejection, Arjun confirms): index < 60.
+
+ROLE ROUTING: score both rubrics; route to SPM if the SPM bar is cleared, else to PM if the PM bar is cleared, else rank within the applied role.
+EXPERIENCE SANITY (flag only, never auto-reject): SPM ~5-8 yrs, PM ~2-4 yrs.

@@ -1,0 +1,38 @@
+{
+  "name": "kargo-hiring",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "seed:rubric": "tsx scripts/seed-rubric.ts",
+    "check:rubric": "tsx scripts/check-rubric.ts",
+    "test:extraction": "tsx scripts/test-extraction.ts",
+    "test:scoring": "tsx scripts/test-scoring.ts",
+    "test": "tsx scripts/test-scoring.ts && tsx scripts/check-rubric.ts"
+  },
+  "dependencies": {
+    "@google/genai": "^2.24.0",
+    "@neondatabase/serverless": "^1.1.0",
+    "cfb": "^1.2.2",
+    "jszip": "^3.10.2",
+    "mammoth": "^1.13.0",
+    "next": "^16.3.6",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "resend": "^6.30.0",
+    "server-only": "^0.0.1",
+    "unpdf": "^1.8.1",
+    "word-extractor": "^1.0.4"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

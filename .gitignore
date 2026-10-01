@@ -1,0 +1,23 @@
+node_modules/
+.next/
+out/
+.vercel/
+*.tsbuildinfo
+next-env.d.ts
+
+# secrets
+.env
+.env.local
+.env.*.local
+
+# never commit candidate data
+*.pdf
+*.docx
+/data/
+
+.vercel
+.env*
+*.ppt
+*.pptx
+*.doc
+!.env.example
