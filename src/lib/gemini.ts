@@ -52,7 +52,14 @@ export async function generateJson<T>(opts: {
       const delay = retryDelayMs(err, attempt);
       if (delay === null || attempt >= 4 || waited + delay > 45_000) {
         const msg = String((err as Error)?.message ?? err);
-        throw new Error(/429|RESOURCE_EXHAUSTED/.test(msg) ? "Gemini rate limit hit, try again in a minute" : `Gemini: ${msg.slice(0, 300)}`);
+        if (/429|RESOURCE_EXHAUSTED/.test(msg)) throw new Error("Gemini rate limit hit, try again in a minute");
+        if (/\b40[13]\b|UNAUTHENTICATED|PERMISSION_DENIED|API_KEY_INVALID|API key not valid/i.test(msg)) {
+          throw new Error("Gemini rejected the API key (invalid, expired or revoked). Update GEMINI_API_KEY in Vercel and redeploy, then click Retry scoring.");
+        }
+        if (/\b404\b|NOT_FOUND|no longer available/i.test(msg)) {
+          throw new Error(`Gemini model "${MODEL()}" is not available to this key. Set GEMINI_MODEL to a current Flash model.`);
+        }
+        throw new Error(`Gemini: ${msg.slice(0, 300)}`);
       }
       waited += delay;
       await sleep(delay);
