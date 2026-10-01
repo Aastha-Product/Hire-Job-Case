@@ -1,12 +1,24 @@
 import { handle, HttpError } from "@/lib/api";
-import { deleteCandidate, getCandidate, updateCandidate } from "@/lib/db";
+import { deleteCandidate, getCandidate, getRubric, listCandidates, updateCandidate } from "@/lib/db";
+import { placedRole, rankRole } from "@/lib/ranking";
+import { rubricVersion } from "@/lib/rubric";
 import type { Candidate } from "@/lib/types";
 
 export const runtime = "nodejs";
 type Ctx = { params: Promise<{ id: string }> };
 
+/** One candidate, placed in their routed role's ranking (rank, decision, other-role score). */
 export async function GET(_req: Request, { params }: Ctx) {
-  return handle(async () => ({ candidate: await getCandidate((await params).id) }));
+  return handle(async () => {
+    const { id } = await params;
+    const [all, rubric] = await Promise.all([listCandidates(), getRubric()]);
+    const raw = all.find((c) => c.id === id);
+    if (!raw) throw new HttpError(404, "Candidate not found. They may have been deleted.");
+    const role = placedRole(raw);
+    const ranked = rankRole(all, role);
+    const placed = ranked.find((c) => c.id === id) ?? null;
+    return { candidate: placed ?? raw, scored: !!placed, role, of: ranked.length, rubricVersion: rubricVersion(rubric) };
+  });
 }
 
 /** Arjun's edits: move across the line, fix the name/email, or edit the draft before sending. */

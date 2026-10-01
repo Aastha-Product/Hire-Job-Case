@@ -13,6 +13,7 @@ type Row = {
   role: Role | "";
   state: "ready" | "working" | "done" | "error";
   note?: string;
+  id?: string; // candidate id once stored
 };
 
 const ACCEPT = ACCEPTED_EXTENSIONS.join(",");
@@ -85,11 +86,12 @@ export default function Upload() {
         form.set("name", r.name);
         try {
           const res = await api<{ candidate: Candidate; error?: string }>("/api/candidates", { method: "POST", body: form });
-          if (res.error) update(i, { state: "error", note: `Saved, but scoring failed: ${res.error}. Retry from the dashboard.` });
+          if (res.error) update(i, { state: "error", id: res.candidate.id, note: `Saved, but scoring failed: ${res.error}. Open it to retry.` });
           else {
             const s = res.candidate.score_json!;
             update(i, {
               state: "done",
+              id: res.candidate.id,
               note: `PM ${s.PM.total} (${s.PM.band}) · SPM ${s.SPM.total} (${s.SPM.band}) → shown under ${s.routed_role}`,
             });
           }
@@ -192,7 +194,15 @@ export default function Upload() {
                     <span className={`chip ${r.state === "done" ? "good" : r.state === "error" ? "bad" : r.state === "working" ? "warn" : ""}`}>{r.state}</span> {r.note}
                   </td>
                   <td>
-                    {(r.state === "ready" || r.state === "error") && !running && (
+                    {r.id && (
+                      // While others are still processing, open in a new tab so the queue keeps running.
+                      <Link href={`/candidates/${r.id}`} target={running ? "_blank" : undefined}>
+                        <button className={r.state === "done" ? "primary sm" : "sm"} style={{ whiteSpace: "nowrap" }}>
+                          View candidate →
+                        </button>
+                      </Link>
+                    )}
+                    {!r.id && (r.state === "ready" || r.state === "error") && !running && (
                       <button title="Remove" onClick={() => setRows((x) => x.filter((_, j) => j !== i))}>×</button>
                     )}
                   </td>
