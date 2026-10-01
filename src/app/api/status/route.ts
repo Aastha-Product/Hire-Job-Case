@@ -1,5 +1,5 @@
 import { handle } from "@/lib/api";
-import { allowedDomains } from "@/lib/email";
+import { allowedDomains, directSendAvailable, draftsInbox } from "@/lib/email";
 
 export const runtime = "nodejs";
 
@@ -10,7 +10,9 @@ export async function GET() {
     gemini: Boolean(process.env.GEMINI_API_KEY),
     geminiModel: process.env.GEMINI_MODEL || "gemini-3.8-flash",
     resend: Boolean(process.env.RESEND_API_KEY),
-    emailOverride: process.env.EMAIL_OVERRIDE_TO || null,
+    // true once Resend has a verified sending domain: emails go straight to candidates.
+    directSend: await directSendAvailable(),
+    draftsTo: draftsInbox(),
     allowedDomains: allowedDomains(),
   }));
 }

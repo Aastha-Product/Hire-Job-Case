@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, runDraftQueue } from "@/lib/client";
 import { ROLE_TITLE, type Band, type BandRules, type Candidate, type RankedCandidate, type Role } from "@/lib/types";
-import { BAND_TITLE, DetailBody, DetailHeader, LEVEL, NextStep, flagLabel, initials, type Toast } from "./candidate-detail";
+import { BAND_TITLE, DetailBody, DetailHeader, LEVEL, NextStep, flagLabel, initials, type MailMode, type Toast } from "./candidate-detail";
 
 interface Data {
   rubricVersion: string;
@@ -16,7 +16,8 @@ interface Status {
   database: boolean;
   gemini: boolean;
   resend: boolean;
-  emailOverride: string | null;
+  directSend: boolean;
+  draftsTo: string | null;
   allowedDomains: string[];
 }
 type Filter = "all" | Band | "sent";
@@ -65,6 +66,7 @@ export default function Dashboard() {
     shortlist: list.filter((c) => c.decision === "invite" && c.email_status !== "sent").length,
     below: list.filter((c) => c.decision === "reject" && c.email_status !== "sent").length,
     sent: list.filter((c) => c.email_status === "sent").length,
+    self: list.filter((c) => c.email_status === "self").length,
   };
   const pending = all.filter(
     (c) => c.email_status !== "sent" && (c.decision === "hold" ? !c.brief : !c.email_body || c.email_type !== c.decision),
@@ -140,12 +142,20 @@ export default function Dashboard() {
       {status && !status.resend && (
         <div className="notice warn small"><span className="ico">!</span><span>Email sending is off until a Resend API key is added.</span></div>
       )}
-      {status?.emailOverride && (
-        <div className="notice info small">
+      {status?.resend && (
+        <div className={`notice ${status.directSend ? "good" : "info"} small`}>
           <span className="ico">✉</span>
           <span>
-            <strong>Test mode.</strong> Nothing is emailed until you open a candidate and click Send. Emails go to{" "}
-            <strong>{status.emailOverride}</strong> instead of the candidate · {all.filter((c) => c.email_status === "sent").length} sent so far.
+            {status.directSend ? (
+              <>Emails go <strong>straight to each candidate</strong> when you click Send.</>
+            ) : (
+              <>
+                <strong>Sending to candidates needs a verified domain in Resend.</strong> Until then, Send puts the draft in{" "}
+                <strong>your inbox{status.draftsTo ? ` (${status.draftsTo})` : ""}</strong> with the candidate&apos;s address to forward,
+                or use <strong>Open in Gmail</strong> on any candidate.
+              </>
+            )}{" "}
+            · {all.filter((c) => c.email_status === "sent").length} sent · {all.filter((c) => c.email_status === "self").length} waiting in your inbox
           </span>
         </div>
       )}
@@ -169,7 +179,7 @@ export default function Dashboard() {
         {statCard("borderline", "Your call", "Borderline: decide", "borderline")}
         {statCard("shortlist", "Invites ready", "Shortlist: review and send", "shortlist")}
         {statCard("below", "Rejections ready", "Below the line: review and send", "below")}
-        {statCard("sent", "Emails sent", "Done", "sent")}
+        {statCard("sent", "Emails sent", stats.self ? `+${stats.self} in your inbox to forward` : "Done", "sent")}
       </div>
 
       {data && (
@@ -221,8 +231,7 @@ export default function Dashboard() {
           role={role}
           index={openIndex}
           total={visible.length}
-          resend={status?.resend ?? false}
-          override={status?.emailOverride ?? null}
+          mail={{ resend: status?.resend ?? false, directSend: status?.directSend ?? false, draftsTo: status?.draftsTo ?? null }}
           onClose={() => setOpenId(null)}
           onStep={step}
           onChange={load}
@@ -271,9 +280,9 @@ function Row({ c, role, active, stale, onOpen }: { c: RankedCandidate; role: Rol
 }
 
 function Drawer({
-  c, role, index, total, resend, override, onClose, onStep, onChange, onToast,
+  c, role, index, total, mail, onClose, onStep, onChange, onToast,
 }: {
-  c: RankedCandidate; role: Role; index: number; total: number; resend: boolean; override: string | null;
+  c: RankedCandidate; role: Role; index: number; total: number; mail: MailMode;
   onClose: () => void; onStep: (d: 1 | -1) => void; onChange: () => Promise<void>; onToast: (t: Toast) => void;
 }) {
   return (
@@ -295,7 +304,7 @@ function Drawer({
           <DetailHeader c={c} role={role} />
         </div>
         <div className="drawer-body">
-          <DetailBody c={c} role={role} resend={resend} override={override} onChange={onChange} onToast={onToast} onDeleted={() => { onClose(); onChange(); }} />
+          <DetailBody c={c} role={role} mail={mail} onChange={onChange} onToast={onToast} onDeleted={() => { onClose(); onChange(); }} />
         </div>
       </aside>
     </>

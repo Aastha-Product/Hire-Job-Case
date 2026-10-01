@@ -8,7 +8,7 @@ import { ROLE_TITLE, type Candidate, type RankedCandidate, type Role } from "@/l
 import { BAND_TITLE, DetailBody, DetailHeader, NextStep, draftReady, type Toast } from "../../candidate-detail";
 
 type Res = { candidate: RankedCandidate | Candidate; scored: boolean; role: Role; of: number; rubricVersion: string };
-type Status = { resend: boolean; emailOverride: string | null };
+type Status = { resend: boolean; directSend: boolean; draftsTo: string | null };
 
 const BAND_EXPLAIN = {
   shortlist: "Clears the shortlist bar. An interview invite is drafted for you to review and send.",
@@ -108,8 +108,7 @@ export default function CandidatePage() {
             c={c}
             role={res!.role}
             focus="score"
-            resend={status?.resend ?? false}
-            override={status?.emailOverride ?? null}
+            mail={{ resend: status?.resend ?? false, directSend: status?.directSend ?? false, draftsTo: status?.draftsTo ?? null }}
             onChange={load}
             onToast={setToast}
             onDeleted={() => router.push("/")}

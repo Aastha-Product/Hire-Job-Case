@@ -8,7 +8,9 @@ export const ROLE_TITLE: Record<Role, string> = {
 export type Band = "shortlist" | "borderline" | "below";
 export type EmailType = "invite" | "reject";
 export type Decision = EmailType | "hold";
-export type EmailStatus = "none" | "draft" | "sent" | "failed";
+// "self" = the draft was emailed to Arjun's own inbox to forward by hand.
+export type EmailStatus = "none" | "draft" | "self" | "sent" | "failed";
+export type Delivery = "resend" | "self" | "manual";
 export type Confidence = "high" | "medium" | "low";
 
 export interface Criterion {
@@ -96,6 +98,7 @@ export interface Candidate {
   email_subject: string | null;
   email_body: string | null;
   email_status: EmailStatus;
+  delivery: Delivery | null;
   email_error: string | null;
   sent_to: string | null;
   sent_at: string | null;

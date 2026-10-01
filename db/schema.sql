@@ -53,7 +53,8 @@ create table if not exists kargo_hiring.candidates (
   email_type        text check (email_type in ('invite', 'reject')),
   email_subject     text,
   email_body        text,             -- uses [NAME] placeholder until send
-  email_status      text not null default 'none' check (email_status in ('none', 'draft', 'sent', 'failed')),
+  email_status      text not null default 'none' check (email_status in ('none', 'draft', 'self', 'sent', 'failed')),
+  delivery          text check (delivery in ('resend', 'self', 'manual')),  -- how it went out: Resend to candidate, draft to Arjun's inbox, or sent by hand
   email_error       text,
   sent_to           text,
   sent_at           timestamptz,

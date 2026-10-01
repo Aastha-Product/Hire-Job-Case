@@ -2,12 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/client";
+import { gmailComposeUrl } from "@/lib/compose";
 import { personalise } from "@/lib/personalise";
 import { ROLE_TITLE, type Band, type RankedCandidate, type Role, type RoleScore } from "@/lib/types";
 
 // Shared by the dashboard side panel and the single-candidate page.
 
 export type Toast = { text: string; kind?: "bad" } | null;
+/** How Send behaves: straight to the candidate, or as a draft to Arjun's inbox. */
+export type MailMode = { resend: boolean; directSend: boolean; draftsTo: string | null };
 
 export const BAND_TITLE: Record<Band, string> = { shortlist: "Shortlist", borderline: "Borderline", below: "Below the line" };
 export const LEVEL = ["Weak", "Moderate", "Strong"];
@@ -32,6 +35,7 @@ export const draftReady = (c: RankedCandidate) => c.decision !== "hold" && !!c.e
 
 export function NextStep({ c }: { c: RankedCandidate }) {
   if (c.email_status === "sent") return <span className="badge good">{c.email_type === "invite" ? "Invite sent" : "Rejection sent"}</span>;
+  if (c.email_status === "self") return <span className="badge warn">In your inbox: forward</span>;
   if (c.email_status === "failed") return <span className="badge bad">Send failed</span>;
   if (c.decision === "hold") return <span className="badge warn">Decide</span>;
   if (!draftReady(c)) return <span className="badge neutral">Drafting…</span>;
@@ -114,9 +118,9 @@ export function DetailHeader({ c, role }: { c: RankedCandidate; role: Role }) {
  * (used right after an upload); `focus="decision"` puts the decision first (dashboard review).
  */
 export function DetailBody({
-  c, role, resend, override, focus = "decision", onChange, onToast, onDeleted,
+  c, role, mail, focus = "decision", onChange, onToast, onDeleted,
 }: {
-  c: RankedCandidate; role: Role; resend: boolean; override: string | null; focus?: "decision" | "score";
+  c: RankedCandidate; role: Role; mail: MailMode; focus?: "decision" | "score";
   onChange: () => Promise<void>; onToast: (t: Toast) => void; onDeleted: () => void;
 }) {
   const s = c.score_json!;
@@ -124,6 +128,7 @@ export function DetailBody({
   const [view, setView] = useState<Role>(role);
   const [subject, setSubject] = useState(personalise(c.email_subject ?? "", name));
   const [body, setBody] = useState(personalise(c.email_body ?? "", name));
+  const [recipient, setRecipient] = useState(c.personal_details.email ?? "");
   const [busy, setBusy] = useState<string | null>(null);
 
   useEffect(() => setView(role), [role]);
@@ -131,12 +136,17 @@ export function DetailBody({
     setSubject(personalise(c.email_subject ?? "", name));
     setBody(personalise(c.email_body ?? "", name));
   }, [c.email_subject, c.email_body, name]);
+  useEffect(() => setRecipient(c.personal_details.email ?? ""), [c.personal_details.email]);
 
   const dirty = c.email_body != null && (subject !== personalise(c.email_subject ?? "", name) || body !== personalise(c.email_body ?? "", name));
+  const recipientDirty = recipient.trim() !== (c.personal_details.email ?? "");
+  const validRecipient = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient.trim());
   const ready = draftReady(c);
   const sent = c.email_status === "sent";
-  const to = override ?? c.personal_details.email ?? "no email on CV";
+  const inInbox = c.email_status === "self";
+  const kind = c.email_type === "invite" ? "invite" : "rejection";
   const flags = [...s.flags, ...s[role].flags].filter((f, i, a) => a.indexOf(f) === i);
+  const gmail = gmailComposeUrl(validRecipient ? recipient.trim() : null, subject, body);
 
   async function run(label: string, fn: () => Promise<unknown>, ok?: string) {
     setBusy(label);
@@ -151,21 +161,67 @@ export function DetailBody({
     }
   }
 
+  /** Persist any edits (address, subject, body) before sending or opening Gmail. */
+  async function saveEdits() {
+    const patch: Record<string, string> = {};
+    if (recipientDirty) patch.email = recipient.trim();
+    if (dirty) Object.assign(patch, { email_subject: subject, email_body: body });
+    if (Object.keys(patch).length) await api(`/api/candidates/${c.id}`, { method: "PATCH", json: patch });
+  }
+
   const decide = (d: "invite" | "reject" | null) =>
     run("decide", async () => {
       await api(`/api/candidates/${c.id}`, { method: "PATCH", json: { decision_override: d } });
       await api(`/api/candidates/${c.id}/generate`, { method: "POST", json: {} });
     }, d ? `Marked as ${d}; draft written` : "Back to the system's recommendation");
 
-  const save = () => run("save", () => api(`/api/candidates/${c.id}`, { method: "PATCH", json: { email_subject: subject, email_body: body } }), "Draft saved");
+  const save = () => run("save", saveEdits, "Saved");
 
   async function send() {
-    const note = override ? `\n\nTest mode: it goes to ${override}, not the candidate.` : "";
-    if (!confirm(`Send this ${c.email_type} email for ${name} to ${to}?${note}\n\nThis cannot be undone.`)) return;
-    await run("send", async () => {
-      if (dirty) await api(`/api/candidates/${c.id}`, { method: "PATCH", json: { email_subject: subject, email_body: body } });
-      await api(`/api/candidates/${c.id}/send`, { method: "POST" });
-    }, `Sent to ${to}`);
+    if (recipient.trim() && !validRecipient) {
+      onToast({ text: "That email address doesn't look right.", kind: "bad" });
+      return;
+    }
+    const target = validRecipient ? recipient.trim() : null;
+    const msg = mail.directSend && target
+      ? `Send this ${kind} to ${name} at ${target}?\n\nThis cannot be undone.`
+      : `Resend can't email ${target ?? "the candidate"} directly yet (no verified domain), so the draft will go to your inbox${mail.draftsTo ? ` (${mail.draftsTo})` : ""} with ${target ?? "the candidate"}'s address, ready to forward.\n\nContinue?`;
+    if (!confirm(msg)) return;
+    setBusy("send");
+    try {
+      await saveEdits();
+      const res = await api<{ delivered: "candidate" | "self"; to: string }>(`/api/candidates/${c.id}/send`, { method: "POST" });
+      onToast({ text: res.delivered === "candidate" ? `Sent to ${res.to}` : `Draft sent to your inbox (${res.to}). Forward it to ${target ?? "the candidate"}.` });
+      await onChange();
+    } catch (e) {
+      onToast({ text: (e as Error).message, kind: "bad" });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  const markSent = () => {
+    if (!confirm(`Mark the ${kind} to ${name} as sent${validRecipient ? ` to ${recipient.trim()}` : ""}? Use this after sending it yourself from Gmail.`)) return;
+    run("mark", async () => {
+      await saveEdits();
+      await api(`/api/candidates/${c.id}/mark-sent`, { method: "POST", json: { to: validRecipient ? recipient.trim() : undefined } });
+    }, "Marked as sent");
+  };
+
+  async function copy() {
+    const text = `To: ${recipient.trim() || "(add the candidate's email)"}\nSubject: ${subject}\n\n${body}`;
+    try {
+      await navigator.clipboard.writeText(text);
+      onToast({ text: "Email copied: paste it into any mail app" });
+    } catch {
+      onToast({ text: "Couldn't copy automatically. Select the text and copy it.", kind: "bad" });
+    }
+  }
+
+  async function openGmail() {
+    // Open the window first (popup blockers allow it only straight from the click), then save edits.
+    window.open(gmail, "_blank", "noopener");
+    if (dirty || recipientDirty) await saveEdits().then(onChange).catch(() => {});
   }
 
   const del = async () => {
@@ -181,16 +237,30 @@ export function DetailBody({
     }
   };
 
+  const when = c.sent_at ? new Date(c.sent_at).toLocaleString() : "";
+
   const decision = (
     <div className="card emph" key="decision">
       <h3>Decision</h3>
       {sent ? (
         <div className="notice good" style={{ marginBottom: 0 }}>
           <span className="ico">✓</span>
-          <span>{c.email_type === "invite" ? "Interview invite" : "Rejection"} sent to {c.sent_to} on {new Date(c.sent_at!).toLocaleString()}.</span>
+          <span>
+            {kind === "invite" ? "Interview invite" : "Rejection"} {c.delivery === "manual" ? "sent by you" : "sent"}
+            {c.sent_to ? ` to ${c.sent_to}` : ""} on {when}.
+          </span>
         </div>
       ) : (
         <>
+          {inInbox && (
+            <div className="notice warn small">
+              <span className="ico">✉</span>
+              <span>
+                The draft was sent to <strong>your inbox ({c.sent_to})</strong> on {when}. Forward it to{" "}
+                <strong>{recipient.trim() || "the candidate"}</strong>, or use <strong>Open in Gmail</strong> below. Then click <strong>Mark as sent</strong>.
+              </span>
+            </div>
+          )}
           <div className="row spread">
             <span className="small muted">
               Recommendation: <strong style={{ color: "var(--text)" }}>{c.system_decision === "hold" ? "your call" : c.system_decision}</strong>
@@ -211,31 +281,53 @@ export function DetailBody({
         </>
       )}
 
-      {(ready || sent || c.email_status === "failed") && (
+      {(ready || sent || inInbox || c.email_status === "failed") && (
         <div style={{ marginTop: 14 }}>
-          <div className="small muted" style={{ marginBottom: 6 }}>
-            To <strong style={{ color: "var(--text)" }}>{sent ? c.sent_to : to}</strong>
-            {override && !sent && <span className="chip warn" style={{ marginLeft: 6 }}>test inbox</span>}
-          </div>
+          <label className="small muted" style={{ display: "block", marginBottom: 4 }}>To (candidate&apos;s email)</label>
+          <input
+            className="wide"
+            type="email"
+            value={recipient}
+            disabled={sent}
+            placeholder="Add the candidate's email address"
+            onChange={(e) => setRecipient(e.target.value)}
+            style={recipient.trim() && !validRecipient ? { borderColor: "var(--bad)" } : undefined}
+            aria-label="Candidate email"
+          />
+          {!sent && (
+            <div className="small" style={{ margin: "6px 0 10px", color: mail.directSend ? "var(--good)" : "var(--warn)" }}>
+              {mail.directSend
+                ? "Send goes straight to this address."
+                : `Direct sending isn't available yet (no verified Resend domain), so Send puts the draft in your inbox${mail.draftsTo ? ` (${mail.draftsTo})` : ""} to forward. Or use Open in Gmail.`}
+            </div>
+          )}
           <input className="wide" value={subject} disabled={sent} onChange={(e) => setSubject(e.target.value)} aria-label="Subject" />
           <textarea rows={11} value={body} disabled={sent} onChange={(e) => setBody(e.target.value)} style={{ marginTop: 8 }} aria-label="Email body" />
           {c.email_error && <div className="notice bad small" style={{ marginTop: 8 }}><span className="ico">!</span><span>{c.email_error}</span></div>}
           {!sent && (
-            <div className="row spread" style={{ marginTop: 10 }}>
-              <div className="row" style={{ gap: 6 }}>
-                <button className="ghost" disabled={!!busy} onClick={() => run("regen", () => api(`/api/candidates/${c.id}/generate`, { method: "POST", json: {} }), "Redrafted")}>
-                  {busy === "regen" ? "Drafting…" : "↻ Redraft"}
+            <>
+              <div className="row spread" style={{ marginTop: 10 }}>
+                <div className="row" style={{ gap: 6 }}>
+                  <button className="ghost" disabled={!!busy} onClick={() => run("regen", () => api(`/api/candidates/${c.id}/generate`, { method: "POST", json: {} }), "Redrafted")}>
+                    {busy === "regen" ? "Drafting…" : "↻ Redraft"}
+                  </button>
+                  {(dirty || recipientDirty) && <button disabled={!!busy} onClick={save}>{busy === "save" ? "Saving…" : "Save edits"}</button>}
+                </div>
+                <button className="primary" disabled={!!busy || !mail.resend} onClick={send} title={mail.resend ? "" : "Add a Resend API key to enable sending"}>
+                  {busy === "send" ? "Sending…" : mail.directSend && validRecipient ? `Send ${kind} →` : inInbox ? "Send draft to my inbox again" : "Send draft to my inbox →"}
                 </button>
-                {dirty && <button disabled={!!busy} onClick={save}>{busy === "save" ? "Saving…" : "Save edits"}</button>}
               </div>
-              <button className="primary" disabled={!!busy || !resend} onClick={send} title={resend ? "" : "Add a Resend API key to enable sending"}>
-                {busy === "send" ? "Sending…" : c.email_type === "invite" ? "Send invite →" : "Send rejection →"}
-              </button>
-            </div>
+              <div className="row" style={{ gap: 6, marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--line-2)" }}>
+                <span className="small muted">Send it yourself:</span>
+                <button className="sm" disabled={!!busy} onClick={openGmail}>Open in Gmail ↗</button>
+                <button className="sm" disabled={!!busy} onClick={copy}>Copy email</button>
+                <button className={inInbox ? "sm good" : "sm"} disabled={!!busy} onClick={markSent}>{busy === "mark" ? "Saving…" : "✓ Mark as sent"}</button>
+              </div>
+            </>
           )}
         </div>
       )}
-      {!ready && !sent && c.email_status !== "failed" && c.decision !== "hold" && (
+      {!ready && !sent && !inInbox && c.email_status !== "failed" && c.decision !== "hold" && (
         <button style={{ marginTop: 12 }} disabled={!!busy} onClick={() => run("regen", () => api(`/api/candidates/${c.id}/generate`, { method: "POST", json: {} }), "Draft written")}>
           {busy === "regen" ? "Drafting…" : `Write ${c.decision} email`}
         </button>
